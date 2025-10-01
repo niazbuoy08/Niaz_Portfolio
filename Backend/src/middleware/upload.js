@@ -131,6 +131,14 @@ const moveFile = (oldPath, newPath) => {
 
 // Middleware to handle upload errors
 const handleUploadError = (error, req, res, next) => {
+  // Log the error details for debugging
+  logger.error('Upload error occurred:', {
+    error: error.message,
+    code: error.code,
+    field: error.field,
+    stack: error.stack
+  });
+
   if (error instanceof multer.MulterError) {
     let message = 'File upload error';
     let statusCode = 400;
@@ -143,7 +151,7 @@ const handleUploadError = (error, req, res, next) => {
         message = 'Too many files uploaded';
         break;
       case 'LIMIT_UNEXPECTED_FILE':
-        message = 'Unexpected file field';
+        message = `Unexpected file field: ${error.field}. Expected field name: 'image'`;
         break;
       case 'LIMIT_PART_COUNT':
         message = 'Too many parts in multipart data';
@@ -161,6 +169,8 @@ const handleUploadError = (error, req, res, next) => {
         message = error.message;
     }
     
+    logger.error(`Multer error: ${message}`, { code: error.code, field: error.field });
+    
     return res.status(statusCode).json({
       success: false,
       message: message,
@@ -169,12 +179,15 @@ const handleUploadError = (error, req, res, next) => {
   }
   
   if (error.message.includes('Invalid file type')) {
+    logger.error('Invalid file type error:', error.message);
     return res.status(400).json({
       success: false,
       message: error.message
     });
   }
-  
+
+  // Log any other errors
+  logger.error('Unhandled upload error:', error);
   next(error);
 };
 

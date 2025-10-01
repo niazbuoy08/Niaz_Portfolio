@@ -47,17 +47,32 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS configuration
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5174', 
+  'http://localhost:5173', 
+  'http://localhost:3000',
+  // Add your production domains here
+  process.env.FRONTEND_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:5174', 'http://localhost:5173', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   optionsSuccessStatus: 200
 }));
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Compression middleware
 app.use(compression());
@@ -72,6 +87,13 @@ if (process.env.NODE_ENV === 'development') {
     }
   }));
 }
+
+// Upload routes MUST come before body parsing middleware to handle multipart form data
+app.use('/api/upload', require('./routes/upload'));
+
+// Body parsing middleware (after upload routes to avoid interfering with multipart data)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files for uploads with detailed logging and CORS headers
 app.use('/uploads', (req, res, next) => {
@@ -119,12 +141,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/research', researchRoutes);
-app.use('/api/upload', require('./routes/upload'));
 
 // 404 handler
 app.use('*', (req, res) => {

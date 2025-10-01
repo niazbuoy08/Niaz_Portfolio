@@ -72,7 +72,7 @@ const Achievements = () => {
           title: achievement.title,
           evidenceImage: achievement.evidenceImage,
           hasImage: !!achievement.evidenceImage,
-          imageUrl: achievement.evidenceImage ? `http://localhost:5000/uploads/images/${achievement.evidenceImage}` : 'No image'
+          imageUrl: achievement.evidenceImage ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${achievement.evidenceImage}` : 'No image'
         });
       });
 
@@ -108,25 +108,32 @@ const Achievements = () => {
       // Handle image upload if there's a file
       if (formData.evidenceImage && formData.evidenceImage instanceof File) {
         try {
+          console.log('📸 Starting image upload...', formData.evidenceImage.name);
           const imageFormData = new FormData();
           imageFormData.append('image', formData.evidenceImage);
           
-          const uploadResponse = await fetch('http://localhost:5000/api/upload/image', {
+          const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/upload/image`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
+              // Note: Don't set Content-Type for FormData - browser sets it automatically with boundary
             },
             body: imageFormData
           });
           
+          console.log('📸 Upload response status:', uploadResponse.status);
+          
           if (uploadResponse.ok) {
             const uploadResult = await uploadResponse.json();
+            console.log('✅ Image uploaded successfully:', uploadResult);
             achievementData.evidenceImage = uploadResult.data.filename;
           } else {
-            throw new Error('Image upload failed');
+            const errorText = await uploadResponse.text();
+            console.error('❌ Image upload failed:', uploadResponse.status, errorText);
+            throw new Error(`Image upload failed: ${uploadResponse.status} - ${errorText}`);
           }
         } catch (uploadError) {
-          console.error('Image upload error:', uploadError);
+          console.error('❌ CRITICAL: Image upload error:', uploadError);
           setError('Failed to upload image. Please try again.');
           return;
         }
@@ -415,16 +422,16 @@ const Achievements = () => {
                   {achievement.evidenceImage && (
                     <div className="h-52 overflow-hidden">
                       <img
-                        src={`http://localhost:5000/uploads/images/${achievement.evidenceImage}`}
+                        src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${achievement.evidenceImage}`}
                         alt={achievement.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         onLoad={() => {
                           console.log(`✅ Image loaded successfully: ${achievement.evidenceImage}`);
-                          console.log(`📸 Full image URL: http://localhost:5000/uploads/images/${achievement.evidenceImage}`);
+                          console.log(`📸 Full image URL: ${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${achievement.evidenceImage}`);
                         }}
                         onError={(e) => {
                           console.error(`❌ Image failed to load: ${achievement.evidenceImage}`);
-                          console.error(`📸 Failed image URL: http://localhost:5000/uploads/images/${achievement.evidenceImage}`);
+                          console.error(`📸 Failed image URL: ${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${achievement.evidenceImage}`);
                           console.error('🔍 Image error details:', e);
                           console.error('🔍 Achievement data:', achievement);
                         }}
@@ -684,7 +691,7 @@ const Achievements = () => {
                       </div>
                     ) : (
                       <img
-                        src={`http://localhost:5000/uploads/images/${formData.evidenceImage}`}
+                        src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${formData.evidenceImage}`}
                         alt="Preview"
                         className="w-40 h-40 object-cover rounded-xl border border-white/20 shadow-lg"
                       />

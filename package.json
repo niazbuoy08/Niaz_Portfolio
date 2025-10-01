@@ -1,0 +1,41 @@
+{
+  "name": "niaz-portfolio",
+  "version": "1.0.0",
+  "description": "Full-stack portfolio website for Niaz Rahman",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix Backend && npm install --prefix Frontend",
+    "dev:backend": "npm run dev --prefix Backend",
+    "dev:frontend": "npm run dev --prefix Frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:backend": "npm run build --prefix Backend",
+    "build:frontend": "npm run build --prefix Frontend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:backend": "npm start --prefix Backend",
+    "start:frontend": "npm run preview --prefix Frontend",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "deploy:backend": "cd Backend && vercel --prod",
+    "deploy:frontend": "cd Frontend && npm run build && vercel --prod",
+    "deploy": "npm run deploy:backend && npm run deploy:frontend",
+    "lint:backend": "npm run lint --prefix Backend",
+    "lint:frontend": "npm run lint --prefix Frontend",
+    "lint": "npm run lint:backend && npm run lint:frontend"
+  },
+  "keywords": [
+    "portfolio",
+    "react",
+    "nodejs",
+    "express",
+    "mongodb",
+    "vercel"
+  ],
+  "author": "Niaz Rahman",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

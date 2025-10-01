@@ -18,6 +18,15 @@ const router = express.Router();
 // @access  Private
 router.post('/image', 
   toggleableAuth,
+  (req, res, next) => {
+    logger.info('Image upload request received:', {
+      headers: Object.keys(req.headers),
+      contentType: req.headers['content-type'],
+      hasBody: !!req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : []
+    });
+    next();
+  },
   uploadConfigs.singleImage,
   handleUploadError,
   processUploadedFiles,
