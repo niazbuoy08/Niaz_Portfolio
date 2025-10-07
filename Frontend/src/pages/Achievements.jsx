@@ -52,35 +52,64 @@ const Achievements = () => {
     try {
       setLoading(true);
       console.log('🔄 Fetching achievements...');
-      const params = {
-        page: currentPage,
-        limit: 9,
-        ...(searchQuery && { q: searchQuery }),
-        ...(categoryFilter && { category: categoryFilter }),
-        sort: '-date'
-      };
-      console.log('📋 API request params:', params);
-
-      const response = await achievementsAPI.getAll(params);
-      console.log('✅ Achievements API response:', response);
-      console.log('📊 Number of achievements received:', response.data?.length || 0);
+      console.log('🔍 Current filter state:', { 
+        categoryFilter, 
+        searchQuery, 
+        currentPage 
+      });
       
-      // Log each achievement's image data
+      let response;
+      
+      // Use dedicated category endpoint if filtering by category
+      if (categoryFilter && categoryFilter !== '') {
+        console.log('🔍 Using dedicated category endpoint for:', categoryFilter);
+        
+        // Use the dedicated category endpoint
+        response = await achievementsAPI.getByCategory(categoryFilter);
+        
+        console.log('✅ Category API response received:', {
+          success: response.success,
+          dataCount: response.data?.length || 0,
+          category: categoryFilter
+        });
+      } else {
+        // Regular search with parameters
+        const params = {
+          page: currentPage,
+          limit: 9,
+          sort: '-date',
+          ...(searchQuery && { q: searchQuery })
+        };
+        
+        console.log('📋 Regular API request params:', params);
+        response = await achievementsAPI.getAll(params);
+        console.log('✅ Regular API response received');
+      }
+      
+      // Detailed logging of response
+      console.log('📊 Number of achievements received:', response.data?.length || 0);
+      console.log('📊 Response meta:', response.meta);
+      
+      // Log each achievement's category to verify filtering
       response.data?.forEach((achievement, index) => {
         console.log(`🎯 Achievement ${index + 1}:`, {
           id: achievement._id,
           title: achievement.title,
-          evidenceImage: achievement.evidenceImage,
-          hasImage: !!achievement.evidenceImage,
-          imageUrl: achievement.evidenceImage ? `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/uploads/images/${achievement.evidenceImage}` : 'No image'
+          category: achievement.category,
+          tags: achievement.tags
         });
       });
 
       setAchievements(response.data);
-      setTotalPages(response.meta.totalPages);
+      setTotalPages(response.meta?.totalPages || 1);
       setError(null);
     } catch (err) {
       console.error('❌ Error fetching achievements:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       setError(apiUtils.handleError(err, 'Failed to fetch achievements'));
     } finally {
       setLoading(false);
